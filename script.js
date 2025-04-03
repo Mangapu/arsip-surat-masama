@@ -31,6 +31,33 @@ function generateLetterNumber(type) {
     }
 }
 
+// Toggle between auto/manual numbering
+function toggleNumberingMode(type) {
+    const numberField = type === 'incoming' ? 
+        document.getElementById('incomingNumber') : 
+        document.getElementById('outgoingNumber');
+    const toggleBtn = type === 'incoming' ?
+        document.getElementById('toggleIncomingMode') :
+        document.getElementById('toggleOutgoingMode');
+
+    if (numberField.readOnly) {
+        // Switch to manual mode
+        numberField.readOnly = false;
+        numberField.classList.remove('bg-gray-100');
+        numberField.classList.add('bg-white');
+        toggleBtn.innerHTML = '<i class="fas fa-magic mr-1"></i> Auto';
+        toggleBtn.classList.replace('toggle-btn-auto', 'toggle-btn-manual');
+    } else {
+        // Switch to auto mode
+        numberField.readOnly = true;
+        numberField.classList.remove('bg-white');
+        numberField.classList.add('bg-gray-100');
+        numberField.value = generateLetterNumber(type);
+        toggleBtn.innerHTML = '<i class="fas fa-edit mr-1"></i> Manual';
+        toggleBtn.classList.replace('toggle-btn-manual', 'toggle-btn-auto');
+    }
+}
+
 // Save letter to storage
 function saveLetter(type, data) {
     const storageKey = type === 'incoming' ? 'incomingLetters' : 'outgoingLetters';
@@ -119,6 +146,16 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('incomingNumber').value = generateLetterNumber('incoming');
         document.getElementById('incomingDate').valueAsDate = new Date();
         
+        // Add toggle button for numbering mode
+        const incomingNumberField = document.getElementById('incomingNumber');
+        const incomingToggleBtn = document.createElement('button');
+        incomingToggleBtn.id = 'toggleIncomingMode';
+        incomingToggleBtn.type = 'button';
+        incomingToggleBtn.className = 'ml-2 px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm';
+        incomingToggleBtn.innerHTML = '<i class="fas fa-edit"></i> Manual';
+        incomingToggleBtn.onclick = () => toggleNumberingMode('incoming');
+        incomingNumberField.parentNode.appendChild(incomingToggleBtn);
+        
         document.getElementById('incomingForm').addEventListener('submit', function(e) {
             e.preventDefault();
             
@@ -146,6 +183,16 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('outgoingForm')) {
         document.getElementById('outgoingNumber').value = generateLetterNumber('outgoing');
         document.getElementById('outgoingDate').valueAsDate = new Date();
+        
+        // Add toggle button for numbering mode
+        const outgoingNumberField = document.getElementById('outgoingNumber');
+        const outgoingToggleBtn = document.createElement('button');
+        outgoingToggleBtn.id = 'toggleOutgoingMode';
+        outgoingToggleBtn.type = 'button';
+        outgoingToggleBtn.className = 'ml-2 px-3 py-1 rounded text-sm toggle-btn toggle-btn-auto';
+        outgoingToggleBtn.innerHTML = '<i class="fas fa-edit mr-1"></i> Manual';
+        outgoingToggleBtn.onclick = () => toggleNumberingMode('outgoing');
+        outgoingNumberField.parentNode.appendChild(outgoingToggleBtn);
         
         document.getElementById('outgoingForm').addEventListener('submit', function(e) {
             e.preventDefault();
