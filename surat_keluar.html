@@ -68,7 +68,13 @@
 
         <!-- List Section -->
         <div class="bg-white rounded-lg shadow-md p-6">
-            <h2 class="text-xl font-semibold mb-4 text-blue-600">Daftar Surat Keluar</h2>
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold text-blue-600">Daftar Surat Keluar</h2>
+                <button onclick="exportToExcel('outgoing')" 
+                        class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded flex items-center">
+                    <i class="fas fa-file-excel mr-2"></i> Ekspor Excel
+                </button>
+            </div>
             <div class="overflow-x-auto">
                 <table class="min-w-full bg-white">
                     <thead>
