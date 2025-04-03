@@ -111,6 +111,23 @@ input:focus, textarea:focus, select:focus {
     background-color: rgba(59, 130, 246, 0.05);
 }
 
+/* Numbering mode toggle button */
+.toggle-btn {
+    transition: all 0.2s ease;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.toggle-btn-auto {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.toggle-btn-manual {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
 /* Custom modal backdrop */
 .modal-backdrop {
     position: fixed;
