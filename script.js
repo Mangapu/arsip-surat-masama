@@ -58,10 +58,18 @@ function toggleNumberingMode(type) {
     }
 }
 
-// Save letter to storage
+// Save letter to storage with unique number validation
 function saveLetter(type, data) {
     const storageKey = type === 'incoming' ? 'incomingLetters' : 'outgoingLetters';
     const letters = JSON.parse(localStorage.getItem(storageKey));
+    
+    // Check for duplicate number
+    const isDuplicate = letters.some(letter => letter.number === data.number);
+    if (isDuplicate) {
+        showNotification('Error: Nomor surat sudah ada!', 'error');
+        return false;
+    }
+    
     letters.push(data);
     localStorage.setItem(storageKey, JSON.stringify(letters));
     return true;
@@ -128,9 +136,10 @@ function deleteLetter(type, index) {
 }
 
 // Show notification
-function showNotification(message) {
+function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
-    notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded shadow-lg';
+    const bgColor = type === 'error' ? 'bg-red-500' : 'bg-green-500';
+    notification.className = `fixed bottom-4 right-4 ${bgColor} text-white px-4 py-2 rounded shadow-lg`;
     notification.textContent = message;
     document.body.appendChild(notification);
     
@@ -173,6 +182,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('incomingNumber').value = generateLetterNumber('incoming');
                 document.getElementById('incomingDate').valueAsDate = new Date();
                 displayLetters('incoming');
+            } else {
+                // Keep the form data if validation fails
+                document.getElementById('incomingNumber').value = letterData.number;
+                document.getElementById('incomingDate').value = letterData.date;
+                document.getElementById('incomingSender').value = letterData.sender;
+                document.getElementById('incomingSubject').value = letterData.subject;
+                document.getElementById('incomingNotes').value = letterData.notes || '';
             }
         });
         
@@ -211,6 +227,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('outgoingNumber').value = generateLetterNumber('outgoing');
                 document.getElementById('outgoingDate').valueAsDate = new Date();
                 displayLetters('outgoing');
+            } else {
+                // Keep the form data if validation fails
+                document.getElementById('outgoingNumber').value = letterData.number;
+                document.getElementById('outgoingDate').value = letterData.date;
+                document.getElementById('outgoingRecipient').value = letterData.recipient;
+                document.getElementById('outgoingSubject').value = letterData.subject;
+                document.getElementById('outgoingNotes').value = letterData.notes || '';
             }
         });
         
