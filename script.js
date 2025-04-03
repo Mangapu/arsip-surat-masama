@@ -135,6 +135,33 @@ function deleteLetter(type, index) {
     }
 }
 
+// Export to Excel
+function exportToExcel(type) {
+    const letters = loadLetters(type);
+    if (letters.length === 0) {
+        showNotification('Tidak ada data untuk diekspor', 'error');
+        return;
+    }
+
+    const headers = ['No', 'Nomor Surat', 'Tanggal', type === 'incoming' ? 'Pengirim' : 'Tujuan', 'Perihal', 'Keterangan'];
+    const wsData = letters.map((letter, index) => [
+        index + 1,
+        letter.number,
+        letter.date,
+        type === 'incoming' ? letter.sender : letter.recipient,
+        letter.subject,
+        letter.notes || '-'
+    ]);
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...wsData]);
+    XLSX.utils.book_append_sheet(wb, ws, type === 'incoming' ? 'Surat Masuk' : 'Surat Keluar');
+    
+    const fileName = `Data_Surat_${type === 'incoming' ? 'Masuk' : 'Keluar'}_${new Date().toISOString().slice(0,10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    showNotification(`Data berhasil diekspor ke ${fileName}`);
+}
+
 // Show notification
 function showNotification(message, type = 'success') {
     const notification = document.createElement('div');
