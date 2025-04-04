@@ -81,6 +81,24 @@ function loadLetters(type) {
     return JSON.parse(localStorage.getItem(storageKey));
 }
 
+// Search functionality
+function setupSearch(type) {
+    const searchId = type === 'incoming' ? 'searchIncoming' : 'searchOutgoing';
+    const searchInput = document.getElementById(searchId);
+    
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll(`#${type}List tr`);
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    }
+}
+
 // Display letters in table
 function displayLetters(type) {
     const letters = loadLetters(type);
@@ -177,6 +195,8 @@ function showNotification(message, type = 'success') {
 
 // Initialize forms
 document.addEventListener('DOMContentLoaded', function() {
+    setupSearch('incoming');
+    setupSearch('outgoing');
     // Incoming letter form
     if (document.getElementById('incomingForm')) {
         document.getElementById('incomingNumber').value = generateLetterNumber('incoming');
