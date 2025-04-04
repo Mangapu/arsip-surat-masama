@@ -60,21 +60,9 @@ async function initDB() {
     }
 }
 
-// Generate letter number
-async function generateLetterNumber(type) {
-    const counters = await readDB('counters.json') || { incoming: 0, outgoing: 0 };
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    
-    if (type === 'incoming') {
-        counters.incoming += 1;
-        return `MASAMAS-IN-${year}${month}${day}-${String(counters.incoming).padStart(3, '0')}`;
-    } else {
-        counters.outgoing += 1;
-        return `MASAMAS-OUT-${year}${month}${day}-${String(counters.outgoing).padStart(3, '0')}`;
-    }
+// Get current date for forms
+function getCurrentDate() {
+    return new Date().toISOString().split('T')[0];
 }
 
 // Toggle between auto/manual numbering
@@ -145,35 +133,45 @@ function setupSearch(type) {
 }
 
 // Display letters in table
-function displayLetters(type) {
-    const letters = loadLetters(type);
-    const tableBody = type === 'incoming' ? 
-        document.getElementById('incomingList') : 
-        document.getElementById('outgoingList');
-    
-    tableBody.innerHTML = '';
-    
-    letters.forEach((letter, index) => {
-        const row = document.createElement('tr');
-        row.className = 'hover:bg-gray-50';
-        
-        row.innerHTML = `
-            <td class="py-3 px-4">${letter.number}</td>
-            <td class="py-3 px-4">${letter.date}</td>
-            <td class="py-3 px-4">${type === 'incoming' ? letter.sender : letter.recipient}</td>
-            <td class="py-3 px-4">${letter.subject}</td>
-            <td class="py-3 px-4">
-                <button onclick="viewLetter('${type}', ${index})" class="text-blue-600 hover:text-blue-800 mr-2">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button onclick="deleteLetter('${type}', ${index})" class="text-red-600 hover:text-red-800">
-                    <i class="fas fa-trash"></i>
-                </button>
-            </td>
-        `;
-        
-        tableBody.appendChild(row);
-    });
+async function displayLetters(type) {
+    try {
+        const letters = await loadLetters(type) || [];
+        const tableBody = document.getElementById(`${type}List`);
+        tableBody.innerHTML = '';
+
+        if (letters.length === 0) {
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="5" class="py-4 text-center text-gray-500">
+                        Belum ada data surat
+                    </td>
+                </tr>`;
+            return;
+        }
+
+        letters.forEach((letter, index) => {
+            const row = document.createElement('tr');
+            row.className = 'hover:bg-gray-50';
+            row.innerHTML = `
+                <td class="py-3 px-4">${letter.number || '-'}</td>
+                <td class="py-3 px-4">${letter.date || '-'}</td>
+                <td class="py-3 px-4">${type === 'incoming' ? (letter.sender || '-') : (letter.recipient || '-')}</td>
+                <td class="py-3 px-4">${letter.subject || '-'}</td>
+                <td class="py-3 px-4">
+                    <button onclick="viewLetter('${type}', ${index})" class="text-blue-600 hover:text-blue-800 mr-2">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button onclick="deleteLetter('${type}', ${index})" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tableBody.appendChild(row);
+        });
+    } catch (error) {
+        console.error('Error displaying letters:', error);
+        showNotification('Gagal memuat daftar surat', 'error');
+    }
 }
 
 // View letter details
@@ -245,8 +243,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     setupSearch('outgoing');
     // Incoming letter form
     if (document.getElementById('incomingForm')) {
-        document.getElementById('incomingNumber').value = generateLetterNumber('incoming');
-        document.getElementById('incomingDate').valueAsDate = new Date();
+        document.getElementById('incomingDate').value = getCurrentDate();
         
         // Add toggle button for numbering mode
         const incomingNumberField = document.getElementById('incomingNumber');
@@ -272,8 +269,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (saveLetter('incoming', letterData)) {
                 showNotification('Surat masuk berhasil disimpan');
                 this.reset();
-                document.getElementById('incomingNumber').value = generateLetterNumber('incoming');
-                document.getElementById('incomingDate').valueAsDate = new Date();
+        document.getElementById('incomingDate').value = getCurrentDate();
                 displayLetters('incoming');
             } else {
                 // Keep the form data if validation fails
@@ -290,8 +286,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Outgoing letter form
     if (document.getElementById('outgoingForm')) {
-        document.getElementById('outgoingNumber').value = generateLetterNumber('outgoing');
-        document.getElementById('outgoingDate').valueAsDate = new Date();
+        document.getElementById('outgoingDate').value = getCurrentDate();
         
         // Add toggle button for numbering mode
         const outgoingNumberField = document.getElementById('outgoingNumber');
@@ -317,8 +312,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             if (saveLetter('outgoing', letterData)) {
                 showNotification('Surat keluar berhasil disimpan');
                 this.reset();
-                document.getElementById('outgoingNumber').value = generateLetterNumber('outgoing');
-                document.getElementById('outgoingDate').valueAsDate = new Date();
+        document.getElementById('outgoingDate').value = getCurrentDate();
                 displayLetters('outgoing');
             } else {
                 // Keep the form data if validation fails
