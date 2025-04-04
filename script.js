@@ -1,22 +1,68 @@
-// Initialize storage if not exists
-if (!localStorage.getItem('letterCounters')) {
-    localStorage.setItem('letterCounters', JSON.stringify({
-        incoming: 0,
-        outgoing: 0
-    }));
+// Database functions
+async function readDB(file) {
+    try {
+        const response = await fetch(`database/db_handler.php?file=${file}`);
+        if (!response.ok) {
+            if (response.status === 404) {
+                return null; // File not found is acceptable for initialization
+            }
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (e) {
+        console.error('Database Read Error:', e);
+        showNotification('Gagal memuat data', 'error');
+        return null;
+    }
 }
 
-if (!localStorage.getItem('incomingLetters')) {
-    localStorage.setItem('incomingLetters', JSON.stringify([]));
+async function writeDB(file, data) {
+    try {
+        const response = await fetch(`database/db_handler.php?file=${file}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to save data');
+        }
+        
+        const result = await response.json();
+        if (!result.success) {
+            throw new Error('Server failed to process request');
+        }
+        
+        return true;
+    } catch (e) {
+        console.error('Database Error:', e);
+        showNotification(`Gagal menyimpan data: ${e.message}`, 'error');
+        return false;
+    }
 }
 
-if (!localStorage.getItem('outgoingLetters')) {
-    localStorage.setItem('outgoingLetters', JSON.stringify([]));
+// Initialize database
+async function initDB() {
+    const defaultCounters = { incoming: 0, outgoing: 0 };
+    const defaultLetters = [];
+    
+    if (!await readDB('counters.json')) {
+        await writeDB('counters.json', defaultCounters);
+    }
+    
+    if (!await readDB('surat_masuk.json')) {
+        await writeDB('surat_masuk.json', defaultLetters);
+    }
+    
+    if (!await readDB('surat_keluar.json')) {
+        await writeDB('surat_keluar.json', defaultLetters);
+    }
 }
 
 // Generate letter number
-function generateLetterNumber(type) {
-    const counters = JSON.parse(localStorage.getItem('letterCounters'));
+async function generateLetterNumber(type) {
+    const counters = await readDB('counters.json') || { incoming: 0, outgoing: 0 };
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
@@ -58,10 +104,10 @@ function toggleNumberingMode(type) {
     }
 }
 
-// Save letter to storage with unique number validation
-function saveLetter(type, data) {
-    const storageKey = type === 'incoming' ? 'incomingLetters' : 'outgoingLetters';
-    const letters = JSON.parse(localStorage.getItem(storageKey));
+// Save letter to database with unique number validation
+async function saveLetter(type, data) {
+    const dbFile = type === 'incoming' ? 'surat_masuk.json' : 'surat_keluar.json';
+    const letters = await readDB(dbFile) || [];
     
     // Check for duplicate number
     const isDuplicate = letters.some(letter => letter.number === data.number);
@@ -71,14 +117,13 @@ function saveLetter(type, data) {
     }
     
     letters.push(data);
-    localStorage.setItem(storageKey, JSON.stringify(letters));
-    return true;
+    return await writeDB(dbFile, letters);
 }
 
-// Load letters from storage
-function loadLetters(type) {
-    const storageKey = type === 'incoming' ? 'incomingLetters' : 'outgoingLetters';
-    return JSON.parse(localStorage.getItem(storageKey));
+// Load letters from database
+async function loadLetters(type) {
+    const dbFile = type === 'incoming' ? 'surat_masuk.json' : 'surat_keluar.json';
+    return await readDB(dbFile) || [];
 }
 
 // Search functionality
@@ -194,7 +239,8 @@ function showNotification(message, type = 'success') {
 }
 
 // Initialize forms
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
+    await initDB();
     setupSearch('incoming');
     setupSearch('outgoing');
     // Incoming letter form
